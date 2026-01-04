@@ -1,5 +1,6 @@
 
 export type ResourceType = 'PDF' | 'Áudio' | 'Link';
+export type DeliveryMode = 'download' | 'viewer';
 
 export interface Deliverable {
   id: string;
@@ -7,23 +8,25 @@ export interface Deliverable {
   type: ResourceType;
   fileBase64?: string;
   externalLink?: string;
+  deliveryMode?: DeliveryMode;
 }
 
 export interface Resource {
   id: string;
   title: string;
   description: string;
-  type: ResourceType; // Tipo principal para exibição de ícone
+  type: ResourceType;
   lockDays: number;
   isManualLock: boolean;
-  checkoutUrl?: string; // Link para Kirvano/Kiwify/etc
-  unlockKey?: string;   // Chave que o cliente recebe após pagar
-  previewCta?: string;  // Texto persuasivo para o Pop-up de prévia
-  previewButtonLabel?: string; // Texto do botão no Pop-up (ex: "ADQUIRIR ACESSO AGORA")
+  checkoutUrl?: string;
+  unlockKey?: string;
+  previewCta?: string;
+  previewButtonLabel?: string;
   coverBase64: string;
-  fileBase64?: string; // Legado (compatibilidade)
-  externalLink?: string; // Legado (compatibilidade)
-  deliverables?: Deliverable[]; // Nova lista de múltiplos arquivos/links
+  fileBase64?: string;
+  externalLink?: string;
+  deliveryMode?: DeliveryMode; // Modo de entrega preferencial
+  deliverables?: Deliverable[];
   createdAt: number;
   module?: string; 
 }

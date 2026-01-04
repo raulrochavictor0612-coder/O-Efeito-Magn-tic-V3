@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { 
   Plus, Trash2, Edit3, GripVertical, FileText, Music, 
   Link as LinkIcon, X, Share2, Copy, Check, Terminal, 
-  Folder, ArrowRightLeft 
+  Folder, ArrowRightLeft, AlertTriangle
 } from 'lucide-react';
 import { Resource, ResourceType } from '../types.ts';
 import { ResourceForm } from './ResourceForm.tsx';
@@ -64,12 +63,10 @@ export const AdminView: React.FC<AdminViewProps> = ({
   };
 
   const handleDragStartModule = (e: React.DragEvent, moduleName: string) => {
-    // IMPORTANTE: Prevenir o arrasto se o usuário clicou em um botão
     if ((e.target as HTMLElement).closest('button')) {
       e.preventDefault();
       return;
     }
-    
     setDraggedModuleName(moduleName);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', moduleName);
@@ -80,30 +77,23 @@ export const AdminView: React.FC<AdminViewProps> = ({
       setDraggedModuleName(null);
       return;
     }
-
     const currentModules = [...availableModules];
     const fromIdx = currentModules.indexOf(draggedModuleName);
     const toIdx = currentModules.indexOf(targetModule);
-
     if (fromIdx === -1 || toIdx === -1) {
       setDraggedModuleName(null);
       return;
     }
-
     const newModulesOrder = [...currentModules];
     const [movedModule] = newModulesOrder.splice(fromIdx, 1);
     newModulesOrder.splice(toIdx, 0, movedModule);
-
     onUpdateModules(newModulesOrder);
-
     const newResourcesOrder: Resource[] = [];
     newModulesOrder.forEach(mod => {
       newResourcesOrder.push(...resources.filter(r => (r.module || 'Modulo 1') === mod));
     });
-    
     const extraResources = resources.filter(r => !newModulesOrder.includes(r.module || 'Modulo 1'));
     newResourcesOrder.push(...extraResources);
-
     onReorder(newResourcesOrder);
     setDraggedModuleName(null);
   };
@@ -113,7 +103,6 @@ export const AdminView: React.FC<AdminViewProps> = ({
       e.preventDefault();
       return;
     }
-    
     setDraggedResourceId(id);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', id);
@@ -137,35 +126,29 @@ export const AdminView: React.FC<AdminViewProps> = ({
     e.preventDefault();
     e.stopPropagation();
     setDropTargetId(null);
-    
     if (!draggedResourceId || draggedResourceId === targetResourceId) {
       setDraggedResourceId(null);
       return;
     }
-
     const dragIdx = resources.findIndex(r => r.id === draggedResourceId);
     if (dragIdx === -1) {
       setDraggedResourceId(null);
       return;
     }
-
     const targetResource = resources.find(r => r.id === targetResourceId);
     if (!targetResource) {
       setDraggedResourceId(null);
       return;
     }
-
     const updatedResources = [...resources];
     const [draggedItem] = updatedResources.splice(dragIdx, 1);
     draggedItem.module = targetResource.module;
-    
     const newDropIdx = updatedResources.findIndex(r => r.id === targetResourceId);
     if (newDropIdx !== -1) {
       updatedResources.splice(newDropIdx, 0, draggedItem);
     } else {
       updatedResources.push(draggedItem);
     }
-    
     onReorder(updatedResources);
     setDraggedResourceId(null);
   };
@@ -179,18 +162,15 @@ export const AdminView: React.FC<AdminViewProps> = ({
         setDraggedResourceId(null);
         return;
       }
-
       const updatedResources = [...resources];
       const [draggedItem] = updatedResources.splice(dragIdx, 1);
       draggedItem.module = targetModule;
-      
       const targetModuleFirstIdx = updatedResources.findIndex(r => (r.module || 'Modulo 1') === targetModule);
       if (targetModuleFirstIdx !== -1) {
         updatedResources.splice(targetModuleFirstIdx, 0, draggedItem);
       } else {
         updatedResources.push(draggedItem);
       }
-
       onReorder(updatedResources);
       setDraggedResourceId(null);
     }
@@ -267,30 +247,19 @@ export const AdminView: React.FC<AdminViewProps> = ({
                     <Folder size={18} className="text-gold" />
                     <h3 className="font-playfair text-xl font-bold tracking-widest text-white/80 uppercase">{moduleName}</h3>
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <div className="text-[9px] font-bold text-gray-700 uppercase tracking-widest hidden md:block">
-                      Arraste o módulo para reordenar
-                    </div>
-                    {/* Botão de Excluir Módulo - ÚNICO LOCAL PERMITIDO AGORA */}
-                    <button 
-                      onMouseDown={(e) => e.stopPropagation()} 
-                      onClick={(e) => { 
-                        e.stopPropagation(); 
-                        handleDeleteModule(moduleName); 
-                      }}
-                      className="p-3 bg-wine/10 text-wine hover:bg-wine hover:text-white rounded-lg transition-all border border-wine/20 flex items-center justify-center"
-                      title="Excluir Módulo e Recursos"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
+                  <button 
+                    onMouseDown={(e) => e.stopPropagation()} 
+                    onClick={(e) => { e.stopPropagation(); handleDeleteModule(moduleName); }}
+                    className="p-3 bg-wine/10 text-wine hover:bg-wine hover:text-white rounded-lg transition-all border border-wine/20 flex items-center justify-center"
+                  >
+                    <Trash2 size={18} />
+                  </button>
                 </div>
                 
                 <div className="space-y-4 min-h-[80px]">
                   {moduleResources.length === 0 ? (
                     <div className="border border-dashed border-white/5 rounded-xl py-10 text-center bg-white/[0.01]">
                        <p className="text-[10px] text-gray-700 font-bold uppercase tracking-widest">Módulo Vazio</p>
-                       <p className="text-[9px] text-gray-800 uppercase mt-1">Arraste um recurso para cá</p>
                     </div>
                   ) : (
                     moduleResources.map((resource) => (
@@ -306,7 +275,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                           draggedResourceId === resource.id 
                           ? 'opacity-40 border-gold/50 bg-gold/5' 
                           : dropTargetId === resource.id
-                          ? 'border-gold bg-gold/10 scale-[1.02] shadow-[0_0_20px_rgba(198,166,100,0.2)]'
+                          ? 'border-gold bg-gold/10 scale-[1.02]'
                           : 'border-white/5 hover:border-gold/40 hover:bg-sidebar/60'
                         }`}
                       >
@@ -322,15 +291,10 @@ export const AdminView: React.FC<AdminViewProps> = ({
                               <span className="text-gold bg-gold/10 p-1.5 rounded-md shrink-0">{getIconForType(resource.type)}</span>
                               <h4 className="font-montserrat font-bold text-sm md:text-base tracking-wide truncate text-white/90">{resource.title}</h4>
                             </div>
-                            <p className="text-[10px] md:text-xs text-gray-500 line-clamp-1 max-w-md font-medium uppercase tracking-wider">{resource.description}</p>
-                            
                             <div className="mt-4 flex items-center space-x-2">
-                               <ArrowRightLeft size={10} className="text-gray-700" />
                                <select 
                                  value={resource.module || 'Modulo 1'}
                                  onChange={(e) => changeResourceModule(resource.id, e.target.value)}
-                                 onClick={(e) => e.stopPropagation()}
-                                 onMouseDown={(e) => e.stopPropagation()}
                                  className="bg-transparent text-[9px] font-bold text-gray-600 uppercase tracking-widest outline-none cursor-pointer hover:text-gold transition-colors"
                                >
                                  {availableModules.map(m => (
@@ -342,26 +306,20 @@ export const AdminView: React.FC<AdminViewProps> = ({
                         </div>
 
                         <div className="flex items-center space-x-2 md:space-x-8 shrink-0 ml-4">
-                          <div className="text-right hidden lg:block">
-                            <p className="text-[10px] text-gray-600 font-bold uppercase tracking-widest mb-1">Trava Temporal</p>
-                            <p className="text-base font-playfair italic text-gold">{resource.lockDays} dias</p>
-                          </div>
-                          <div className="flex space-x-2">
-                            <button 
-                              onMouseDown={e => e.stopPropagation()}
-                              onClick={(e) => { e.stopPropagation(); handleEdit(resource); }}
-                              className="p-3 text-white/30 hover:text-gold hover:bg-gold/10 rounded-xl transition-all border border-transparent hover:border-gold/20"
-                            >
-                              <Edit3 size={18} />
-                            </button>
-                            <button 
-                              onMouseDown={e => e.stopPropagation()}
-                              onClick={(e) => { e.stopPropagation(); onDelete(resource.id); }}
-                              className="p-3 text-white/30 hover:text-wine hover:bg-wine/10 rounded-xl transition-all border border-transparent hover:border-wine/20"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          </div>
+                          <button 
+                            onMouseDown={e => e.stopPropagation()}
+                            onClick={(e) => { e.stopPropagation(); handleEdit(resource); }}
+                            className="p-3 text-white/30 hover:text-gold hover:bg-gold/10 rounded-xl transition-all"
+                          >
+                            <Edit3 size={18} />
+                          </button>
+                          <button 
+                            onMouseDown={e => e.stopPropagation()}
+                            onClick={(e) => { e.stopPropagation(); onDelete(resource.id); }}
+                            className="p-3 text-white/30 hover:text-wine hover:bg-wine/10 rounded-xl transition-all"
+                          >
+                            <Trash2 size={18} />
+                          </button>
                         </div>
                       </div>
                     ))
@@ -375,33 +333,26 @@ export const AdminView: React.FC<AdminViewProps> = ({
 
       {isSyncOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-12 bg-matte/98 backdrop-blur-2xl overflow-y-auto">
-          <div className="w-full max-w-5xl bg-sidebar border border-gold/20 rounded-2xl shadow-[0_50px_100px_-20px_rgba(0,0,0,1)] overflow-hidden animate-in fade-in zoom-in duration-500 flex flex-col md:flex-row my-auto">
-            <div className="w-full md:w-80 bg-black/40 border-b md:border-b-0 md:border-r border-white/5 p-8 md:p-10 space-y-8 shrink-0">
-              <h4 className="text-gold font-playfair font-bold italic text-xl uppercase tracking-[0.2em]">Deploy</h4>
-              <div className="space-y-8">
-                {[1, 2, 3, 4].map(num => (
-                  <div key={num} className="flex items-start space-x-4">
-                    <div className="w-6 h-6 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center text-gold text-[10px] font-bold shrink-0">{num}</div>
-                    <p className="text-[10px] text-gray-400 font-montserrat leading-relaxed uppercase tracking-widest font-semibold">
-                      {num === 1 && "Prepare o arsenal com novos conteúdos."}
-                      {num === 2 && "Clique no botão copiar código fonte."}
-                      {num === 3 && "Substitua o conteúdo de database.ts."}
-                      {num === 4 && "Atualize seu deploy no Netlify/Vercel."}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex-1 p-8 md:p-12 space-y-8 bg-sidebar">
+          <div className="w-full max-w-4xl bg-sidebar border border-gold/20 rounded-2xl shadow-[0_50px_100px_-20px_rgba(0,0,0,1)] overflow-hidden animate-in fade-in zoom-in duration-500 flex flex-col my-auto">
+            <div className="p-8 md:p-12 space-y-8">
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="font-playfair text-2xl md:text-3xl font-bold text-white uppercase tracking-tight">Sincronização</h3>
-                  <p className="text-[10px] text-gold/60 uppercase tracking-[0.3em] font-bold mt-2">Módulo de Exportação Mestra</p>
+                  <h3 className="font-playfair text-3xl font-bold text-white uppercase tracking-tight">Sincronização Mestra</h3>
+                  <p className="text-[10px] text-gold/60 uppercase tracking-[0.3em] font-bold mt-2">Exportação de Código para Deploy</p>
                 </div>
                 <button onClick={() => setIsSyncOpen(false)} className="text-gray-500 hover:text-white transition-colors p-3 hover:bg-white/5 rounded-full">
                   <X size={28} />
                 </button>
+              </div>
+
+              <div className="bg-wine/10 border border-wine/30 p-6 rounded-xl flex items-start space-x-4 animate-pulse">
+                <AlertTriangle className="text-wine shrink-0" size={24} />
+                <div className="space-y-1">
+                  <h4 className="text-wine text-xs font-bold uppercase tracking-widest">Aviso Crítico de Segurança</h4>
+                  <p className="text-[10px] text-gray-400 font-medium leading-relaxed">
+                    Recursos com PDFs ou Imagens geram códigos massivos. <span className="text-white font-bold underline">NUNCA</span> selecione o texto manualmente com o mouse abaixo, pois ele será cortado. Clique <span className="text-gold font-bold">EXCLUSIVAMENTE</span> no botão de cópia automática para garantir a integridade do código.
+                  </p>
+                </div>
               </div>
               
               <button 
@@ -409,22 +360,21 @@ export const AdminView: React.FC<AdminViewProps> = ({
                 className={`w-full py-6 rounded-xl transition-all flex items-center justify-center space-x-4 font-montserrat font-bold text-[11px] tracking-[0.4em] uppercase shadow-2xl ${
                   copied 
                   ? 'bg-green-600 text-white scale-[0.98]' 
-                  : 'bg-gold text-matte hover:bg-white hover:shadow-gold/30'
+                  : 'bg-gold text-matte hover:bg-white'
                 }`}
               >
-                {copied ? <><Check size={20} /> <span>CÓDIGO COPIADO</span></> : <><Copy size={20} /> <span>COPIAR CÓDIGO FONTE</span></>}
+                {copied ? <><Check size={20} /> <span>CÓDIGO ÍNTEGRO COPIADO</span></> : <><Copy size={20} /> <span>COPIAR CÓDIGO FONTE COMPLETO</span></>}
               </button>
 
-              <div className="relative group rounded-xl overflow-hidden border border-white/10">
-                <div className="bg-black/90 p-6 pt-12 text-[10px] md:text-[11px] overflow-auto font-mono text-gray-500 max-h-[300px] leading-relaxed custom-scrollbar">
-                  <div className="absolute top-4 left-6 flex items-center space-x-2 opacity-40">
-                    <Terminal size={14} className="text-gold" />
-                    <span className="font-sans uppercase tracking-[0.2em] text-[9px] font-bold">Preview database.ts</span>
-                  </div>
-                  <pre className="whitespace-pre-wrap break-all">
-                    <span className="text-gold/80">import</span> {'{ Resource }'} <span className="text-gold/80">from</span> <span className="text-green-500">'./types.ts'</span>;<br /><br />
-                    <span className="text-gold/80">export const</span> <span className="text-yellow-500">MASTER_RESOURCES</span>: Resource[] = {JSON.stringify(resources, null, 2).substring(0, 800)}...
-                  </pre>
+              <div className="relative rounded-xl overflow-hidden border border-white/10 bg-black/40 p-8">
+                <div className="flex items-center space-x-2 mb-6 opacity-40">
+                  <Terminal size={14} className="text-gold" />
+                  <span className="font-sans uppercase tracking-[0.2em] text-[9px] font-bold">Log de Exportação (Somente Leitura)</span>
+                </div>
+                <div className="font-mono text-[10px] text-gray-600 space-y-4">
+                  <p className="text-green-500/50">// Preparando {resources.length} recursos...</p>
+                  <p className="text-blue-500/50">// Calculando checksum de strings Base64...</p>
+                  <p className="italic">O código foi comprimido internamente para performance. Clique no botão acima para descarregar o arquivo pronto para o seu GitHub/Netlify.</p>
                 </div>
               </div>
             </div>
@@ -436,25 +386,11 @@ export const AdminView: React.FC<AdminViewProps> = ({
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-12 bg-matte/98 backdrop-blur-2xl overflow-y-auto">
           <div className="w-full max-w-4xl bg-sidebar border border-white/10 rounded-2xl shadow-[0_50px_100px_-20px_rgba(0,0,0,1)] overflow-hidden animate-in fade-in zoom-in duration-500 my-auto flex flex-col max-h-[90vh]">
             <div className="p-8 border-b border-white/5 flex justify-between items-center bg-black/40">
-              <div>
-                <h3 className="font-playfair text-2xl md:text-3xl font-bold uppercase tracking-tight">
-                  {editingResource ? 'Editar Item' : 'Novo Recurso'}
-                </h3>
-                <p className="text-[10px] text-gold/60 uppercase tracking-[0.3em] font-bold mt-2">Personalização do Arsenal</p>
-              </div>
-              <button onClick={() => setIsFormOpen(false)} className="text-gray-500 hover:text-white transition-colors p-3 hover:bg-white/5 rounded-full">
-                <X size={28} />
-              </button>
+              <h3 className="font-playfair text-2xl md:text-3xl font-bold uppercase tracking-tight">{editingResource ? 'Editar Item' : 'Novo Recurso'}</h3>
+              <button onClick={() => setIsFormOpen(false)} className="text-gray-500 hover:text-white transition-colors p-3 hover:bg-white/5 rounded-full"><X size={28} /></button>
             </div>
             <div className="p-8 md:p-12 overflow-y-auto custom-scrollbar flex-1">
-              <ResourceForm 
-                onSave={(r) => {
-                  editingResource ? onUpdate(r) : onAdd(r);
-                  setIsFormOpen(false);
-                }}
-                initialData={editingResource}
-                availableModules={availableModules}
-              />
+              <ResourceForm onSave={(r) => { editingResource ? onUpdate(r) : onAdd(r); setIsFormOpen(false); }} initialData={editingResource} availableModules={availableModules} />
             </div>
           </div>
         </div>

@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
-import { Resource, ResourceType, Deliverable } from '../types.ts';
+import { Resource, ResourceType, Deliverable, DeliveryMode } from '../types.ts';
 import { fileToBase64 } from '../utils.ts';
-import { Upload, Link as LinkIcon, ChevronDown, Lock, X, ShoppingCart, Key, Sparkles, ShieldAlert, Plus, Trash2, FileText, Music } from 'lucide-react';
+import { Upload, Link as LinkIcon, ChevronDown, Lock, X, ShoppingCart, Key, Sparkles, ShieldAlert, Plus, Trash2, FileText, Music, BookOpen, Download } from 'lucide-react';
 
 interface ResourceFormProps {
   onSave: (r: Resource) => void;
@@ -30,20 +30,9 @@ export const ResourceForm: React.FC<ResourceFormProps> = ({
   const [isAddingNewModule, setIsAddingNewModule] = useState(false);
   const [newModuleName, setNewModuleName] = useState('');
 
-  // Gerenciamento de múltiplos entregáveis
   const [deliverables, setDeliverables] = useState<Deliverable[]>(() => {
     if (initialData?.deliverables && initialData.deliverables.length > 0) {
       return initialData.deliverables;
-    }
-    // Converter campos legados se existirem
-    if (initialData?.fileBase64 || initialData?.externalLink) {
-      return [{
-        id: 'legacy-1',
-        title: 'Arquivo Principal',
-        type: initialData.type,
-        fileBase64: initialData.fileBase64,
-        externalLink: initialData.externalLink
-      }];
     }
     return [];
   });
@@ -53,6 +42,7 @@ export const ResourceForm: React.FC<ResourceFormProps> = ({
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       title: '',
       type: 'PDF',
+      deliveryMode: 'viewer' // Padrão agora é sempre viewer (abrir aba)
     };
     setDeliverables([...deliverables, newItem]);
   };
@@ -86,20 +76,20 @@ export const ResourceForm: React.FC<ResourceFormProps> = ({
     }
 
     const finalModule = isAddingNewModule ? newModuleName : module;
-    const isManualLockChecked = isManualLock;
 
     onSave({
       id: initialData?.id || Date.now().toString(),
       title,
       description,
       type,
+      deliveryMode: 'viewer', // Forçamos viewer
       module: finalModule,
-      lockDays: isManualLockChecked ? 0 : lockDays,
-      isManualLock: isManualLockChecked,
-      checkoutUrl: isManualLockChecked ? checkoutUrl : '',
-      unlockKey: isManualLockChecked ? unlockKey : '',
-      previewCta: isManualLockChecked ? previewCta : '',
-      previewButtonLabel: isManualLockChecked ? previewButtonLabel : '',
+      lockDays: isManualLock ? 0 : lockDays,
+      isManualLock: isManualLock,
+      checkoutUrl: isManualLock ? checkoutUrl : '',
+      unlockKey: isManualLock ? unlockKey : '',
+      previewCta: isManualLock ? previewCta : '',
+      previewButtonLabel: isManualLock ? previewButtonLabel : '',
       deliverables,
       coverBase64: cover,
       createdAt: initialData?.createdAt || Date.now()
@@ -116,7 +106,7 @@ export const ResourceForm: React.FC<ResourceFormProps> = ({
         alert("Erro ao processar imagem de capa.");
       } finally {
         setIsProcessing(false);
-        e.target.value = ''; // Limpar para permitir selecionar o mesmo arquivo se necessário
+        e.target.value = '';
       }
     }
   };
@@ -155,7 +145,7 @@ export const ResourceForm: React.FC<ResourceFormProps> = ({
               )}
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-3">Estilo de Ícone Principal</label>
+              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-3">Estilo de Ícone</label>
               <div className="relative group">
                 <select value={type} onChange={(e) => setType(e.target.value as ResourceType)} className="w-full bg-black/40 border border-white/10 rounded-lg p-4 text-sm outline-none appearance-none text-white">
                   <option value="PDF" className="bg-matte">PDF / E-book</option>
@@ -165,6 +155,16 @@ export const ResourceForm: React.FC<ResourceFormProps> = ({
                 <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" size={16} />
               </div>
             </div>
+          </div>
+
+          <div className="bg-gold/5 border border-gold/10 p-6 rounded-xl space-y-3">
+             <div className="flex items-center space-x-2 text-gold">
+               <BookOpen size={16} />
+               <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Entrega de Conteúdo</span>
+             </div>
+             <p className="text-[10px] text-gray-400 leading-relaxed font-medium">
+               Todos os arquivos PDF serão abertos em uma <span className="text-white">nova aba do navegador</span> para garantir a melhor experiência de leitura e preservar sua formatação personalizada.
+             </p>
           </div>
 
           <div className={`relative p-6 rounded-xl space-y-6 transition-all duration-500 border overflow-hidden ${isManualLock ? 'bg-gold/5 border-gold/20' : 'bg-black/20 border-white/5 opacity-40 grayscale pointer-events-none'}`}>
@@ -200,15 +200,13 @@ export const ResourceForm: React.FC<ResourceFormProps> = ({
                   <span className="text-[9px] font-bold text-gray-600 uppercase tracking-widest leading-relaxed">Arraste a capa</span>
                 </>
               )}
-              {/* CORREÇÃO: Input com z-index alto para garantir que fique sobre o label 'Alterar' */}
               <input type="file" accept="image/*" onChange={handleCoverChange} className="absolute inset-0 opacity-0 cursor-pointer z-[20]" />
             </div>
           </div>
 
-          {/* Seção de Entregáveis Múltiplos */}
           <div className="bg-black/20 p-6 rounded-xl border border-white/5 space-y-6">
             <div className="flex items-center justify-between border-b border-white/5 pb-4">
-              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">Entregáveis (Arquivos/Links)</label>
+              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">Arquivos Disponíveis</label>
               <button 
                 type="button" 
                 onClick={addDeliverable}
@@ -221,12 +219,12 @@ export const ResourceForm: React.FC<ResourceFormProps> = ({
 
             <div className="space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
               {deliverables.length === 0 && (
-                <p className="text-[9px] text-gray-600 uppercase tracking-widest text-center py-4 italic">Nenhum arquivo adicionado ainda.</p>
+                <p className="text-[9px] text-gray-600 uppercase tracking-widest text-center py-4 italic">Nenhum conteúdo vinculado.</p>
               )}
               {deliverables.map((item, index) => (
                 <div key={item.id} className="bg-matte/40 border border-white/5 p-4 rounded-xl space-y-4 animate-in slide-in-from-right-4 duration-300">
                   <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-bold text-gray-700 uppercase tracking-tighter">Entregável #{index + 1}</span>
+                    <span className="text-[9px] font-bold text-gray-700 uppercase tracking-tighter">Item #{index + 1}</span>
                     <button type="button" onClick={() => removeDeliverable(item.id)} className="text-red-500/50 hover:text-red-500 transition-colors">
                       <Trash2 size={14} />
                     </button>
@@ -267,7 +265,7 @@ export const ResourceForm: React.FC<ResourceFormProps> = ({
                       {item.fileBase64 ? (
                         <div className="flex items-center space-x-2">
                           <span className="text-green-500"><FileText size={16} /></span>
-                          <span className="text-[9px] font-bold text-green-500 uppercase tracking-widest">Arquivo Carregado ✓</span>
+                          <span className="text-[9px] font-bold text-green-500 uppercase tracking-widest">Carregado ✓</span>
                         </div>
                       ) : (
                         <>

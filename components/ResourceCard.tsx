@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { Lock, FileText, Music, Link as LinkIcon, ExternalLink, Download, Clock, ShoppingCart, Key, Check, X, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Lock, FileText, Music, Link as LinkIcon, ExternalLink, Clock, ShoppingCart, Key, Check, X, ChevronRight, Maximize2 } from 'lucide-react';
 import { Resource, User, ResourceType, Deliverable } from '../types.ts';
 import { isResourceLocked } from '../utils.ts';
 
@@ -24,7 +24,6 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, user }) =>
   const isPaid = unlockedItems.includes(resource.id);
   const { locked: timeLocked, remaining } = isResourceLocked(user.joinedAt, resource.lockDays, user.role);
   
-  // Dinâmica: Se for admin, ignora todas as travas. Se for usuário, checa lock manual e temporal.
   const isAdmin = user.role === 'admin';
   const manualLocked = resource.isManualLock;
   const needsKey = !isAdmin && manualLocked && !isPaid;
@@ -34,32 +33,46 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, user }) =>
     if (resource.deliverables && resource.deliverables.length > 0) {
       return resource.deliverables;
     }
-    if (resource.fileBase64 || resource.externalLink) {
-      return [{
-        id: 'primary',
-        title: 'Recurso Principal',
-        type: resource.type,
-        fileBase64: resource.fileBase64,
-        externalLink: resource.externalLink
-      }];
-    }
-    return [];
+    return [{
+      id: 'primary',
+      title: 'Recurso Principal',
+      type: resource.type,
+      fileBase64: resource.fileBase64,
+      externalLink: resource.externalLink,
+      deliveryMode: 'viewer'
+    }];
   };
 
   const executeAccess = (item: Deliverable) => {
-    if (item.type === 'Link' && item.externalLink) {
-      const url = item.externalLink.startsWith('http') 
-        ? item.externalLink 
-        : `https://${item.externalLink}`;
+    // Nova lógica: Abre em nova aba sempre
+    if (item.type === 'PDF' || item.type === 'Áudio') {
+      if (item.fileBase64) {
+        // Converte Base64 para Blob para abrir em nova aba nativa
+        const parts = item.fileBase64.split(',');
+        const byteCharacters = atob(parts[1]);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const mimeType = parts[0].split(':')[1].split(';')[0];
+        const blob = new Blob([byteArray], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        
+        // Abre em nova aba
+        window.open(url, '_blank', 'noopener,noreferrer');
+        
+        // Limpeza opcional (após delay curto para garantir abertura)
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      } else if (item.externalLink) {
+        const url = item.externalLink.startsWith('http') ? item.externalLink : `https://${item.externalLink}`;
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
+    } else if (item.type === 'Link' && item.externalLink) {
+      const url = item.externalLink.startsWith('http') ? item.externalLink : `https://${item.externalLink}`;
       window.open(url, '_blank', 'noopener,noreferrer');
-    } else if (item.fileBase64) {
-      const link = document.createElement('a');
-      link.href = item.fileBase64;
-      link.download = item.title || resource.title;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
     }
+    
     setShowAccessMenu(false);
   };
 
@@ -114,8 +127,8 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, user }) =>
       if (count > 1) return <><span>ACESSAR CONTEÚDOS ({count})</span><ChevronRight size={14} /></>;
       
       switch (resource.type) {
-        case 'Link': return <><ExternalLink size={14} /><span>ACESSAR AGORA</span></>;
-        case 'PDF': return <><Download size={14} /><span>BAIXAR ARQUIVO</span></>;
+        case 'Link': return <><ExternalLink size={14} /><span>ABRIR AGORA</span></>;
+        case 'PDF': return <><Maximize2 size={14} /><span>LER AGORA</span></>;
         case 'Áudio': return <><Music size={14} /><span>OUVIR AGORA</span></>;
       }
     }
@@ -218,13 +231,10 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, user }) =>
                     </div>
                   </div>
                   <div className="p-2 rounded-full bg-white/5 text-gray-600 group-hover:text-gold transition-colors">
-                     {item.type === 'Link' ? <ExternalLink size={16} /> : <Download size={16} />}
+                     <Maximize2 size={16} />
                   </div>
                 </button>
               ))}
-            </div>
-            <div className="p-6 bg-black/40 shrink-0 text-center">
-               <p className="text-[9px] text-gray-700 font-bold uppercase tracking-[0.2em]">© {new Date().getFullYear()} Domínio Magnético</p>
             </div>
           </div>
         </div>
