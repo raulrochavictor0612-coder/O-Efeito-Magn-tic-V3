@@ -44,10 +44,9 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, user }) =>
   };
 
   const executeAccess = (item: Deliverable) => {
-    // Nova lógica: Abre em nova aba sempre
+    // Abre sempre em aba externa (visualização nativa do browser)
     if (item.type === 'PDF' || item.type === 'Áudio') {
       if (item.fileBase64) {
-        // Converte Base64 para Blob para abrir em nova aba nativa
         const parts = item.fileBase64.split(',');
         const byteCharacters = atob(parts[1]);
         const byteNumbers = new Array(byteCharacters.length);
@@ -59,10 +58,9 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, user }) =>
         const blob = new Blob([byteArray], { type: mimeType });
         const url = URL.createObjectURL(blob);
         
-        // Abre em nova aba
         window.open(url, '_blank', 'noopener,noreferrer');
         
-        // Limpeza opcional (após delay curto para garantir abertura)
+        // Mantém o link vivo por 1 minuto para garantir carregamento e depois libera RAM
         setTimeout(() => URL.revokeObjectURL(url), 60000);
       } else if (item.externalLink) {
         const url = item.externalLink.startsWith('http') ? item.externalLink : `https://${item.externalLink}`;
@@ -124,16 +122,16 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, user }) =>
   const getButtonContent = () => {
     if (!isLocked) {
       const count = getDeliverables().length;
-      if (count > 1) return <><span>ACESSAR CONTEÚDOS ({count})</span><ChevronRight size={14} /></>;
+      if (count > 1) return <><span>ACESSAR ({count})</span><ChevronRight size={14} /></>;
       
       switch (resource.type) {
-        case 'Link': return <><ExternalLink size={14} /><span>ABRIR AGORA</span></>;
+        case 'Link': return <><ExternalLink size={14} /><span>ABRIR NA WEB</span></>;
         case 'PDF': return <><Maximize2 size={14} /><span>LER AGORA</span></>;
         case 'Áudio': return <><Music size={14} /><span>OUVIR AGORA</span></>;
       }
     }
-    if (needsKey) return <><Lock size={14} /><span>DESBLOQUEAR ACESSO</span></>;
-    if (timeLocked) return <><Clock size={14} /><span>AGUARDE A LIBERAÇÃO</span></>;
+    if (needsKey) return <><Lock size={14} /><span>DESBLOQUEAR</span></>;
+    if (timeLocked) return <><Clock size={14} /><span>BLOQUEADO</span></>;
     return <span>ACESSAR</span>;
   };
 
@@ -206,8 +204,8 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, user }) =>
           <div className="w-full max-w-lg bg-sidebar border border-gold/20 rounded-[2.5rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,1)] flex flex-col max-h-[80vh]">
             <div className="p-10 border-b border-white/5 flex justify-between items-center bg-black/20 shrink-0">
                <div>
-                 <h4 className="font-playfair text-2xl font-bold text-white tracking-tight">Conteúdo do Arsenal</h4>
-                 <p className="text-[10px] text-gold/60 uppercase tracking-[0.3em] font-bold mt-1">Selecione o arquivo para acesso</p>
+                 <h4 className="font-playfair text-2xl font-bold text-white tracking-tight">Arsenal Disponível</h4>
+                 <p className="text-[10px] text-gold/60 uppercase tracking-[0.3em] font-bold mt-1">Selecione para abrir na web</p>
                </div>
                <button onClick={() => setShowAccessMenu(false)} className="text-gray-500 hover:text-white p-3 hover:bg-white/5 rounded-full transition-all">
                  <X size={24} />

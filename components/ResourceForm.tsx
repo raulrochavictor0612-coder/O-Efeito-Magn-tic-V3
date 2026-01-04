@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
-import { Resource, ResourceType, Deliverable, DeliveryMode } from '../types.ts';
+import { Resource, ResourceType, Deliverable } from '../types.ts';
 import { fileToBase64 } from '../utils.ts';
-import { Upload, Link as LinkIcon, ChevronDown, Lock, X, ShoppingCart, Key, Sparkles, ShieldAlert, Plus, Trash2, FileText, Music, BookOpen, Download } from 'lucide-react';
+import { Upload, Link as LinkIcon, ChevronDown, Lock, X, ShoppingCart, Key, Sparkles, ShieldAlert, Plus, Trash2, FileText, Music, BookOpen } from 'lucide-react';
 
 interface ResourceFormProps {
   onSave: (r: Resource) => void;
@@ -42,7 +42,7 @@ export const ResourceForm: React.FC<ResourceFormProps> = ({
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       title: '',
       type: 'PDF',
-      deliveryMode: 'viewer' // Padrão agora é sempre viewer (abrir aba)
+      deliveryMode: 'viewer'
     };
     setDeliverables([...deliverables, newItem]);
   };
@@ -82,7 +82,7 @@ export const ResourceForm: React.FC<ResourceFormProps> = ({
       title,
       description,
       type,
-      deliveryMode: 'viewer', // Forçamos viewer
+      deliveryMode: 'viewer',
       module: finalModule,
       lockDays: isManualLock ? 0 : lockDays,
       isManualLock: isManualLock,
@@ -145,7 +145,7 @@ export const ResourceForm: React.FC<ResourceFormProps> = ({
               )}
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-3">Estilo de Ícone</label>
+              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-3">Tipo de Ícone</label>
               <div className="relative group">
                 <select value={type} onChange={(e) => setType(e.target.value as ResourceType)} className="w-full bg-black/40 border border-white/10 rounded-lg p-4 text-sm outline-none appearance-none text-white">
                   <option value="PDF" className="bg-matte">PDF / E-book</option>
@@ -160,10 +160,10 @@ export const ResourceForm: React.FC<ResourceFormProps> = ({
           <div className="bg-gold/5 border border-gold/10 p-6 rounded-xl space-y-3">
              <div className="flex items-center space-x-2 text-gold">
                <BookOpen size={16} />
-               <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Entrega de Conteúdo</span>
+               <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Acesso Web Nativo</span>
              </div>
              <p className="text-[10px] text-gray-400 leading-relaxed font-medium">
-               Todos os arquivos PDF serão abertos em uma <span className="text-white">nova aba do navegador</span> para garantir a melhor experiência de leitura e preservar sua formatação personalizada.
+               Para garantir a integridade da sua customização, todos os conteúdos serão abertos em uma <span className="text-white">nova aba do navegador</span>, utilizando o leitor nativo do dispositivo do usuário.
              </p>
           </div>
 
@@ -206,7 +206,7 @@ export const ResourceForm: React.FC<ResourceFormProps> = ({
 
           <div className="bg-black/20 p-6 rounded-xl border border-white/5 space-y-6">
             <div className="flex items-center justify-between border-b border-white/5 pb-4">
-              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">Arquivos Disponíveis</label>
+              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">Arquivos / Links</label>
               <button 
                 type="button" 
                 onClick={addDeliverable}
@@ -219,7 +219,7 @@ export const ResourceForm: React.FC<ResourceFormProps> = ({
 
             <div className="space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
               {deliverables.length === 0 && (
-                <p className="text-[9px] text-gray-600 uppercase tracking-widest text-center py-4 italic">Nenhum conteúdo vinculado.</p>
+                <p className="text-[9px] text-gray-600 uppercase tracking-widest text-center py-4 italic">Nenhum item adicionado.</p>
               )}
               {deliverables.map((item, index) => (
                 <div key={item.id} className="bg-matte/40 border border-white/5 p-4 rounded-xl space-y-4 animate-in slide-in-from-right-4 duration-300">
@@ -236,7 +236,7 @@ export const ResourceForm: React.FC<ResourceFormProps> = ({
                       value={item.title} 
                       onChange={(e) => updateDeliverable(item.id, { title: e.target.value })} 
                       className="col-span-1 bg-black/60 border border-white/10 rounded p-2 text-[10px] text-white outline-none focus:border-gold/30" 
-                      placeholder="Nome do arquivo" 
+                      placeholder="Título do Item" 
                     />
                     <select 
                       value={item.type} 
@@ -256,7 +256,7 @@ export const ResourceForm: React.FC<ResourceFormProps> = ({
                         value={item.externalLink || ''} 
                         onChange={(e) => updateDeliverable(item.id, { externalLink: e.target.value })} 
                         className="w-full bg-black/60 border border-white/10 rounded p-2 text-[10px] text-gold outline-none focus:border-gold/30 pl-8" 
-                        placeholder="https://..." 
+                        placeholder="Cole a URL aqui..." 
                       />
                       <LinkIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-600" size={12} />
                     </div>
@@ -293,8 +293,8 @@ export const ResourceForm: React.FC<ResourceFormProps> = ({
             </div>
             {isManualLock && (
               <div className="space-y-4 pt-4 border-t border-white/5 animate-in slide-in-from-top-2 duration-300">
-                <div className="flex items-center space-x-2 mb-2"><Sparkles className="text-gold" size={14} /><span className="text-[9px] font-bold text-gold uppercase tracking-widest">Configuração do Pop-up</span></div>
-                <textarea value={previewCta} onChange={(e) => setPreviewCta(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded p-3 text-[11px] text-white h-20 resize-none outline-none focus:border-gold/30" placeholder="CTA de Venda..." />
+                <div className="flex items-center space-x-2 mb-2"><Sparkles className="text-gold" size={14} /><span className="text-[9px] font-bold text-gold uppercase tracking-widest">Pop-up de Venda</span></div>
+                <textarea value={previewCta} onChange={(e) => setPreviewCta(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded p-3 text-[11px] text-white h-20 resize-none outline-none focus:border-gold/30" placeholder="Texto persuasivo..." />
                 <input type="text" value={previewButtonLabel} onChange={(e) => setPreviewButtonLabel(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded p-3 text-[11px] text-white outline-none focus:border-gold/30" placeholder="Texto do Botão..." />
               </div>
             )}
@@ -311,7 +311,7 @@ export const ResourceForm: React.FC<ResourceFormProps> = ({
 
       <div className="pt-10 border-t border-white/5 flex justify-end">
         <button type="submit" disabled={isProcessing} className="bg-gold hover:bg-white text-matte px-12 py-5 rounded-lg font-montserrat font-bold text-xs tracking-[0.4em] uppercase transition-all shadow-2xl flex items-center space-x-4 group disabled:opacity-50">
-          {isProcessing ? 'Processando...' : <><span>Salvar no Arsenal</span><Upload size={18} className="group-hover:-translate-y-1 transition-transform" /></>}
+          {isProcessing ? 'Processando...' : <><span>Salvar Item</span><Upload size={18} className="group-hover:-translate-y-1 transition-transform" /></>}
         </button>
       </div>
     </form>
