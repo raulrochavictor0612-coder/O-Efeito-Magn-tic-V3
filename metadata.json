@@ -1,0 +1,8 @@
+{
+  "name": "Copy of Domínio Magnético™",
+  "description": "Plataforma de curadoria de conteúdo premium com estética de elite e arsenal administrativo avançado.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
